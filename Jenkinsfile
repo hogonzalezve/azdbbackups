@@ -68,7 +68,7 @@ pipeline {
                             vmList.each { vm ->
                                 def recoveryPoints = sh(script: 'az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1" --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM', returnStdout: true).trim()
                                 def recoveryPointId = parseRecoveryPointId(recoveryPoints)
-                                sh "az backup recoverypoint restore --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1 --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM --recovery-point-id ${recoveryPointId}'
+                                sh 'az backup recoverypoint restore --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1" --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM --recovery-point-id ${recoveryPointId}'
                             }
                                 def fileShareRecoveryPoints = sh(script: 'az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd" --item-name fileshareone --backup-management-type AzureStorage --workload-type AzureFileShare', returnStdout: true).trim()
                                 def fileShareRecoveryPointId = parseRecoveryPointId(fileShareRecoveryPoints)
