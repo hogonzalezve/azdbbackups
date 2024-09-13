@@ -11,7 +11,7 @@ def projectProperties = [
 properties(projectProperties)
 
 /* Creación Variables Globales */
-@Field def VARIABLE_NAME = ''
+/*@Field def VARIABLE_NAME = ''
 
 pipeline {
     agent any
