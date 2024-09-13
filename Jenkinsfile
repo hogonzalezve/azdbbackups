@@ -68,7 +68,7 @@ pipeline {
         stage('Backup VM') {
             steps {
                 script {
-                    sh "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1" --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM"
+                    sh 'az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1" --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM'
                 }
             }
         }
