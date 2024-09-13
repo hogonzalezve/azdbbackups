@@ -1,3 +1,15 @@
+#!/usr/bin/env groovy
+/* Only keep the 10 most recent builds. */
+
+def projectProperties = [
+    buildDiscarder(logRotator(numToKeepStr: '30')),
+]
+
+properties(projectProperties)
+
+/* Creación Variables Globales */
+@Field def VARIABLE_NAME = ''
+
 pipeline {
     agent any
 
