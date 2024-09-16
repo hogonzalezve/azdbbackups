@@ -59,7 +59,7 @@ pipeline {
                             def vmRecoveryPointsVm1 = sh(script: "az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1' --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM", returnStdout: true).trim()
                             def vmRecoveryPointNameVm1 = parseRecoveryPointName(vmRecoveryPointsVm1)
                             if (vmRecoveryPointNameVm1) {
-                                sh "az backup restore restore-disks --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1' --item-name vm1 --rp-name ${vmRecoveryPointNameVm1} --storage-account rgoccidentetemp92cd"
+                                sh "az backup restore restore-disks --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1' --item-name vm1 --rp-name ${vmRecoveryPointNameVm1} --storage-account rgoccidentetemp92cd --restore-mode OriginalLocation"
                             } else {
                                 error "No recovery points found for vm1."
                             }
@@ -68,7 +68,7 @@ pipeline {
                             def vmRecoveryPointsVm2 = sh(script: 'az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2" --item-name vm2 --backup-management-type AzureIaasVM --workload-type VM', returnStdout: true).trim()
                             def vmRecoveryPointNameVm2 = parseRecoveryPointName(vmRecoveryPointsVm2)
                             if (vmRecoveryPointNameVm1) {
-                                sh "az backup restore restore-disks --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2' --item-name vm2 --rp-name ${vmRecoveryPointNameVm2} --storage-account rgoccidentetemp92cd"
+                                sh "az backup restore restore-disks --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2' --item-name vm2 --rp-name ${vmRecoveryPointNameVm2} --storage-account rgoccidentetemp92cd --restore-mode OriginalLocation"
                             } else {
                                 error "No recovery points found for vm2."
                             }
