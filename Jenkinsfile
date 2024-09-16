@@ -83,7 +83,7 @@ stages {
                             // Restore for file share
                             def fileShareRecoveryPoints = sh(script: 'az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd" --item-name fileshareone --backup-management-type AzureStorage --workload-type AzureFileShare', returnStdout: true).trim()
                             def fileShareRecoveryPointId = parseRecoveryPointId(fileShareRecoveryPoints)
-                            sh 'az backup restore files rgoccidentetemp92cd --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd" --item-name fileshareone --recovery-point-id ${fileShareRecoveryPointId}'
+                            sh 'az backup restore files --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd" --item-name fileshareone --recovery-point-id ${fileShareRecoveryPointId}'
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', or 'fileshare'."
                         }
