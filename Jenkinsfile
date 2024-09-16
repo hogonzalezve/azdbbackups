@@ -43,27 +43,35 @@ pipeline {
                     if (params.ACTION == 'backup') {
                         if (params.TARGET == 'vm1') {
                             // Backup for vm1
-                            sh 'az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1" --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM'
+                            sh "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1' --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM"
                         } else if (params.TARGET == 'vm2') {
                             // Backup for vm2
-                            sh 'az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2" --item-name vm2 --backup-management-type AzureIaasVM --workload-type VM'
+                            sh "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2' --item-name vm2 --backup-management-type AzureIaasVM --workload-type VM"
                         } else if (params.TARGET == 'fileshare') {
                             // Backup for file share
-                            sh 'az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd" --item-name fileshareone --backup-management-type AzureStorage --workload-type AzureFileShare'
+                            sh "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd' --item-name fileshareone --backup-management-type AzureStorage --workload-type AzureFileShare"
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', or 'fileshare'."
                         }
                     } else if (params.ACTION == 'restore') {
                         if (params.TARGET == 'vm1') {
                             // Restore for vm1
-                            def recoveryPointsVm1 = sh(script: 'az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1" --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM', returnStdout: true).trim()
-                            def recoveryPointIdVm1 = parseRecoveryPointId(recoveryPointsVm1)
-                            sh 'az backup recoverypoint restore --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1" --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM --recovery-point-id ${recoveryPointIdVm1}'
+                            def vmRecoveryPointsVm1 = sh(script: "az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1' --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM", returnStdout: true).trim()
+                            def vmRecoveryPointNameVm1 = parseRecoveryPointName(vmRecoveryPointsVm1)
+                            if (vmRecoveryPointNameVm1) {
+                                sh "az backup restore restore-disks --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1' --item-name vm1 --rp-name ${vmRecoveryPointNameVm1} --storage-account rgoccidentetemp92cd"
+                            } else {
+                                error "No recovery points found for vm1."
+                            }
                         } else if (params.TARGET == 'vm2') {
                             // Restore for vm2
-                            def recoveryPointsVm2 = sh(script: 'az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2" --item-name vm2 --backup-management-type AzureIaasVM --workload-type VM', returnStdout: true).trim()
-                            def recoveryPointIdVm2 = parseRecoveryPointId(recoveryPointsVm2)
-                            sh 'az backup recoverypoint restore --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2" --item-name vm2 --backup-management-type AzureIaasVM --workload-type VM --recovery-point-id ${recoveryPointIdVm2}'
+                            def vmRecoveryPointsVm2 = sh(script: 'az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2" --item-name vm2 --backup-management-type AzureIaasVM --workload-type VM', returnStdout: true).trim()
+                            def vmRecoveryPointNameVm2 = parseRecoveryPointName(vmRecoveryPointsVm2)
+                            if (vmRecoveryPointNameVm1) {
+                                sh "az backup restore restore-disks --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2' --item-name vm2 --rp-name ${vmRecoveryPointNameVm2} --storage-account rgoccidentetemp92cd"
+                            } else {
+                                error "No recovery points found for vm2."
+                            }
                         } else if (params.TARGET == 'fileshare') {
                             // Restore for file share
                             def fileShareRecoveryPoints = sh(script: 'az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd" --item-name fileshareone --backup-management-type AzureStorage --workload-type AzureFileShare', returnStdout: true).trim()
@@ -83,11 +91,6 @@ pipeline {
             }
         }
     }
-}
-
-def parseRecoveryPointId(recoveryPointsJson) {
-    def recoveryPoints = new groovy.json.JsonSlurper().parseText(recoveryPointsJson)
-    return recoveryPoints[0]?.id ?: error("No recovery points found")
 }
 
 def parseRecoveryPointName(recoveryPointsJson) {
