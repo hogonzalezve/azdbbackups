@@ -17,30 +17,15 @@ pipeline {
     }
 
     parameters {
-           string(name: 'ACTION', defaultValue: 'backup', description: 'Action to perform: backup or restore')
-           string(name: 'TARGET', defaultValue: 'vm1', description: 'Target to perform action on: vm1, vm2, or fileshare')
-       }
+        string(name: 'ACTION', defaultValue: 'backup', description: 'Action to perform: backup or restore')
+        string(name: 'TARGET', defaultValue: 'vm1', description: 'Target to perform action on: vm1, vm2, or fileshare')
+    }
 
     // environment {
     //     AZURE_CREDENTIALS = credentials(AZURE_CREDENTIALS_ID)
     // }
 
-    // stages {
-    //     stage('Login to Azure') {
-    //         steps {
-    //             script {
-    //                 withCredentials([azureServicePrincipal(credentialsId: AZURE_CREDENTIALS_ID)]) {
-    //                     sh '''
-    //                     az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET -t $AZURE_TENANT_ID
-    //                     az account set -s $AZURE_SUBSCRIPTION_ID
-    //                     '''
-    //                 }
-    //             }
-    //         }
-    //     }
-    
-
-stages {
+    stages {
         stage('Login to Azure') {
             steps {
                 script {
@@ -83,7 +68,11 @@ stages {
                             // Restore for file share
                             def fileShareRecoveryPoints = sh(script: 'az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd" --item-name fileshareone --backup-management-type AzureStorage --workload-type AzureFileShare', returnStdout: true).trim()
                             def fileShareRecoveryPointName = parseRecoveryPointName(fileShareRecoveryPoints)
-                            sh 'az backup restore restore-azurefiles --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd" --item-name fileshareone --rp-name ${fileShareRecoveryPointName} --resolve-conflict Overwrite --restore-mode OriginalLocation'
+                            if (fileShareRecoveryPointName) {
+                                sh "az backup restore restore-azurefiles --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd' --item-name fileshareone --rp-name ${fileShareRecoveryPointName} --resolve-conflict Overwrite --restore-mode OriginalLocation"
+                            } else {
+                                error "No recovery points found for fileshare."
+                            }
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', or 'fileshare'."
                         }
@@ -103,5 +92,5 @@ def parseRecoveryPointId(recoveryPointsJson) {
 
 def parseRecoveryPointName(recoveryPointsJson) {
     def recoveryPoints = new groovy.json.JsonSlurper().parseText(recoveryPointsJson)
-    return recoveryPoints[0]?.name ?: error("No recovery points found")
+    return recoveryPoints[0]?.name ?: null
 }
