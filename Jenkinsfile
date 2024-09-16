@@ -19,11 +19,6 @@ pipeline {
     parameters {
            string(name: 'ACTION', defaultValue: 'backup', description: 'Action to perform: backup or restore')
            string(name: 'TARGET', defaultValue: 'vm1', description: 'Target to perform action on: vm1, vm2, or fileshare')
-    //     string(name: 'VM_LIST', defaultValue: '', description: 'Comma-separated list of VM names. Ref: vm1,vm2,vm3')
-    //     string(name: 'ADD_VM_GROUP_START_TAG_KEY', defaultValue: '', description: 'Key for the start group tag. Ref: grupo1start, grupo2start ')
-    //     string(name: 'ADD_VM_GROUP_STOP_TAG_KEY', defaultValue: '', description: 'Key for the stop group tag. Ref: grupo1stop, grupo2stop')
-    //     string(name: 'REMOVE_VM_GROUP_START_TAG_KEY', defaultValue: '', description: 'Key for the start tag group to remove. Ref: grupo1start, grupo2start')
-    //     string(name: 'REMOVE_VM_GROUP_STOP_TAG_KEY', defaultValue: '', description: 'Key for the stop tag group to remove. Ref: grupo1stop, grupo2stop')
        }
 
     // environment {
@@ -99,4 +94,9 @@ stages {
             }
         }
     }
+}
+
+def parseRecoveryPointId(recoveryPointsJson) {
+    def recoveryPoints = new groovy.json.JsonSlurper().parseText(recoveryPointsJson)
+    return recoveryPoints[0]?.id ?: error("No recovery points found")
 }
