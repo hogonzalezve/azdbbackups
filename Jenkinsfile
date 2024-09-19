@@ -7,7 +7,7 @@ pipeline {
 
     parameters {
         string(name: 'ACTION', defaultValue: 'backup', description: 'Action to perform: backup or restore')
-        string(name: 'TARGET', defaultValue: 'vm1', description: 'Target to perform action on: vm1, vm2, or fileshare, sql1, sql2')
+        string(name: 'TARGET', defaultValue: 'vm1', description: 'Target to perform action on: vm1, vm2, fileshare, sql1, or sql2')
     }
 
     stages {
@@ -37,7 +37,8 @@ pipeline {
                             jobId = parseJobId(backupOutput)
                         } else if (params.TARGET == 'fileshare') {
                             // Backup for file share
-                            sh "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd' --item-name fileshareone --backup-management-type AzureStorage --workload-type AzureFileShare"
+                            def backupOutput = sh(script: "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd' --item-name fileshareone --backup-management-type AzureStorage --workload-type AzureFileShare", returnStdout: true).trim()
+                            jobId = parseJobId(backupOutput)
                         } else if (params.TARGET == 'sql1') {
                             // Backup for Azure SQL1
                             sh "az sql db export --admin-password ${params.SQL1_ADMIN_PASSWORD} --admin-user ${params.SQL1_ADMIN_USER} --authentication-type Sql --name ${params.SQL1_DB_NAME} --resource-group ${params.SQL1_RESOURCE_GROUP} --server ${params.SQL1_SERVER_NAME} --storage-key ${params.SQL1_STORAGE_KEY} --storage-key-type ${params.SQL1_STORAGE_KEY_TYPE} --storage-uri ${params.SQL1_STORAGE_URI}"
