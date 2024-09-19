@@ -114,7 +114,12 @@ pipeline {
         }
     }
 }
-    
+
+def parseRecoveryPointName(recoveryPointsJson) {
+    def recoveryPoints = new groovy.json.JsonSlurper().parseText(recoveryPointsJson)
+    return recoveryPoints[0]?.name ?: null
+}
+
 def parseJobId(output) {
     def json = new groovy.json.JsonSlurper().parseText(output)
     return json.id
