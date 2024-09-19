@@ -43,10 +43,12 @@ pipeline {
                     if (params.ACTION == 'backup') {
                         if (params.TARGET == 'vm1') {
                             // Backup for vm1
-                            sh "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1' --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM"
+                            def backupOutput = sh(script: "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1' --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM", returnStdout: true).trim()
+                            jobId = parseJobId(backupOutput)
                         } else if (params.TARGET == 'vm2') {
                             // Backup for vm2
-                            sh "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2' --item-name vm2 --backup-management-type AzureIaasVM --workload-type VM"
+                            def backupOutput = sh(script: "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2' --item-name vm2 --backup-management-type AzureIaasVM --workload-type VM", returnStdout: true).trim()
+                            jobId = parseJobId(backupOutput)
                         } else if (params.TARGET == 'fileshare') {
                             // Backup for file share
                             sh "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd' --item-name fileshareone --backup-management-type AzureStorage --workload-type AzureFileShare"
@@ -123,6 +125,45 @@ def parseRecoveryPointName(recoveryPointsJson) {
 def parseJobId(output) {
     def json = new groovy.json.JsonSlurper().parseText(output)
     return json.id
+}
+
+def waitForBackupCompletion(jobId) {
+    while (true) {
+        def jobStatus = sh(script: "az backup job show --ids ${jobId}", returnStdout: true).trim()
+        def json = new groovy.json.JsonSlurper().parseText(jobStatus)
+
+        // Validate the status of the JobType
+        def jobTypeStatus = json.properties.status
+        if (jobTypeStatus == 'Completed') {
+            echo "JobType status is completed."
+        } else if (jobTypeStatus == 'Failed') {
+            error "JobType status is failed."
+        } else {
+            echo "JobType status is in progress..."
+        }
+
+        // Validate the status of each task in the tasksList
+        def tasksList = json.properties.extendedInfo.tasksList
+        def allTasksCompleted = true
+        for (task in tasksList) {
+            if (task.status != 'Completed') {
+                echo "Task ${task.taskId} status is not completed: ${task.status}"
+                allTasksCompleted = false
+            } else {
+                echo "Task ${task.taskId} status is completed."
+            }
+        }
+
+        if (jobTypeStatus == 'Completed' && allTasksCompleted) {
+            echo "All tasks and JobType status are completed."
+            break
+        } else if (jobTypeStatus == 'Failed') {
+            error "Backup failed."
+        } else {
+            echo "Backup in progress..."
+            sleep(time: 60, unit: 'SECONDS')
+        }
+    }
 }
 
 def waitForRestoreCompletion(jobId) {
