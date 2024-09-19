@@ -1,14 +1,3 @@
-#!/usr/bin/env groovy
-
-def projectProperties = [
-    buildDiscarder(logRotator(numToKeepStr: '10')),
-]
-
-properties(projectProperties)
-
-// Definir Variables Globales
-//@Field def AZURE_CREDENTIALS_ID = 'azure-credentials-id'
-
 pipeline {
     agent any
 
@@ -21,10 +10,6 @@ pipeline {
         string(name: 'TARGET', defaultValue: 'vm1', description: 'Target to perform action on: vm1, vm2, or fileshare, sql1, sql2')
     }
 
-    // environment {
-    //     AZURE_CREDENTIALS = credentials(AZURE_CREDENTIALS_ID)
-    // }
-
     stages {
         stage('Login to Azure') {
             steps {
@@ -36,7 +21,7 @@ pipeline {
                 }
             }
         }
-    
+
         stage('Perform Action') {
             steps {
                 script {
@@ -61,6 +46,10 @@ pipeline {
                             sh "az sql db export --admin-password ${params.SQL2_ADMIN_PASSWORD} --admin-user ${params.SQL2_ADMIN_USER} --authentication-type Sql --name ${params.SQL2_DB_NAME} --resource-group ${params.SQL2_RESOURCE_GROUP} --server ${params.SQL2_SERVER_NAME} --storage-key ${params.SQL2_STORAGE_KEY} --storage-key-type ${params.SQL2_STORAGE_KEY_TYPE} --storage-uri ${params.SQL2_STORAGE_URI}"
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
+                        }
+
+                        if (jobId) {
+                            waitForBackupCompletion(jobId)
                         }
                     } else if (params.ACTION == 'restore') {
                         def jobId = null
