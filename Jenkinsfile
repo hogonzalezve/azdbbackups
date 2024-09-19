@@ -37,7 +37,7 @@ pipeline {
             }
         }
     
-        stage('Perform Action') {
+         stage('Perform Action') {
             steps {
                 script {
                     if (params.ACTION == 'backup') {
