@@ -129,10 +129,33 @@ def waitForRestoreCompletion(jobId) {
     while (true) {
         def jobStatus = sh(script: "az backup job show --ids ${jobId}", returnStdout: true).trim()
         def json = new groovy.json.JsonSlurper().parseText(jobStatus)
-        if (json.properties.status == 'Completed') {
-            echo "Restore completed successfully."
+
+        // Validate the status of the JobType
+        def jobTypeStatus = json.properties.status
+        if (jobTypeStatus == 'Completed') {
+            echo "JobType status is completed."
+        } else if (jobTypeStatus == 'Failed') {
+            error "JobType status is failed."
+        } else {
+            echo "JobType status is in progress..."
+        }
+
+        // Validate the status of each task in the tasksList
+        def tasksList = json.properties.extendedInfo.tasksList
+        def allTasksCompleted = true
+        for (task in tasksList) {
+            if (task.status != 'Completed') {
+                echo "Task ${task.taskId} status is not completed: ${task.status}"
+                allTasksCompleted = false
+            } else {
+                echo "Task ${task.taskId} status is completed."
+            }
+        }
+
+        if (jobTypeStatus == 'Completed' && allTasksCompleted) {
+            echo "All tasks and JobType status are completed."
             break
-        } else if (json.properties.status == 'Failed') {
+        } else if (jobTypeStatus == 'Failed') {
             error "Restore failed."
         } else {
             echo "Restore in progress..."
