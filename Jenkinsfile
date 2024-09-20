@@ -159,8 +159,7 @@ def deleteManagedDisk(vmName) {
     }
 }
 
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
 
 def getLatestBackupFile(storageAccount, containerName, storageKey) {
     def listFilesCommand = """
@@ -169,8 +168,9 @@ def getLatestBackupFile(storageAccount, containerName, storageKey) {
     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
     def files = filesList.split('\n').collect { it.split('\t') }
     
+    def dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
     def latestFile = files.max { file -> 
-        ZonedDateTime.parse(file[1], DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+        dateFormat.parse(file[1])
     }
     return latestFile[0]
 }
