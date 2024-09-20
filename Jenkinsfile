@@ -98,6 +98,9 @@ pipeline {
 
                         if (jobId) {
                             waitForJobCompletion(jobId)
+                            if (params.TARGET == 'vm1' || params.TARGET == 'vm2') {
+                                deleteManagedDisk(params.TARGET)
+                            }
                         }
                     } else {
                         error "Invalid ACTION parameter: ${params.ACTION}. Must be 'backup' or 'restore'."
@@ -120,4 +123,20 @@ def parseJobId(output) {
 
 def waitForJobCompletion(jobId) {
     sh(script: "az backup job wait --ids ${jobId}", returnStdout: true)
+}
+
+def deleteManagedDisk(vmName) {
+    def diskList = sh(script: "az disk list --query \"[?contains(name, '${vmName}')].{name:name, managedBy:managedBy}\" -o tsv", returnStdout: true).trim()
+    def disks = diskList.split('\n')
+    for (disk in disks) {
+        def diskInfo = disk.split('\t')
+        def diskName = diskInfo[0]
+        def managedBy = diskInfo[1]
+        if (!managedBy) {
+            sh "az disk delete --name ${diskName} --resource-group rg_occidente_temp --yes"
+            echo "Deleted managed disk: ${diskName}"
+        } else {
+            echo "Disk ${diskName} is still attached to a VM."
+        }
+    }
 }
