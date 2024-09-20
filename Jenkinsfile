@@ -98,6 +98,8 @@ pipeline {
 
                         if (jobId) {
                             waitForJobCompletion(jobId)
+                            // Espera adicional para asegurar que los discos estén desasociados
+                            sleep(time: 60, unit: 'SECONDS')
                             if (params.TARGET == 'vm1' || params.TARGET == 'vm2') {
                                 deleteManagedDisk(params.TARGET)
                             }
@@ -132,7 +134,7 @@ def deleteManagedDisk(vmName) {
         def diskInfo = disk.split('\t')
         def diskName = diskInfo[0]
         def managedBy = diskInfo[1]
-        if (!managedBy || managedBy == 'none') {
+        if (!managedBy || managedBy == 'none' || managedBy == 'null') {
             sh "az disk delete --name ${diskName} --resource-group rg_occidente_temp --yes"
             echo "Deleted managed disk: ${diskName}"
         } else {
