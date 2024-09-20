@@ -169,8 +169,12 @@ def getLatestBackupFile(storageAccount, containerName, storageKey) {
     def dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
     def files = filesList.split('\n').collect { line ->
         def parts = line.split('\t')
-        [name: parts[0], lastModified: dateFormat.parse(parts[1])]
-    }
+        if (parts[1] != "None") {
+            [name: parts[0], lastModified: dateFormat.parse(parts[1])]
+        } else {
+            null
+        }
+    }.findAll { it != null }
     def latestFile = files.max { it.lastModified }.name
     return latestFile
 }
