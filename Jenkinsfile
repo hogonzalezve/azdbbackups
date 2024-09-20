@@ -160,23 +160,28 @@ def deleteManagedDisk(vmName) {
 }
 
 import java.text.SimpleDateFormat
-import java.text.ParseException
 
 def getLatestBackupFile(storageAccount, containerName, storageKey) {
     def listFilesCommand = """
     az storage blob list --account-name ${storageAccount} --container-name backupdb --account-key ${storageKey} --query "[].{name:name, lastModified:lastModified}" --output tsv
     """
     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
+    echo "Files list: ${filesList}"
+    
     def dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
     def files = filesList.split('\n').collect { line ->
         def parts = line.split('\t')
         if (parts.size() == 2 && parts[1] != "None") {
             try {
-                [name: parts[0], lastModified: dateFormat.parse(parts[1])]
-            } catch (ParseException e) {
+                def parsedDate = dateFormat.parse(parts[1])
+                echo "Parsed date for ${parts[0]}: ${parsedDate}"
+                [name: parts[0], lastModified: parsedDate]
+            } catch (Exception e) {
+                echo "Failed to parse date for ${parts[0]}: ${parts[1]}"
                 null
             }
         } else {
+            echo "Invalid entry: ${line}"
             null
         }
     }.findAll { it != null }
