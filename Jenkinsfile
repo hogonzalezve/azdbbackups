@@ -159,14 +159,17 @@ def deleteManagedDisk(vmName) {
     }
 }
 
+import java.text.SimpleDateFormat
+
 def getLatestBackupFile(storageAccount, containerName, storageKey) {
     def listFilesCommand = """
     az storage blob list --account-name ${storageAccount} --container-name backupdb --account-key ${storageKey} --query "[].{name:name, lastModified:lastModified}" --output tsv
     """
     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
+    def dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'")
     def files = filesList.split('\n').collect { line ->
         def parts = line.split('\t')
-        [name: parts[0], lastModified: Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'", parts[1])]
+        [name: parts[0], lastModified: dateFormat.parse(parts[1])]
     }
     def latestFile = files.max { it.lastModified }.name
     return latestFile
