@@ -161,12 +161,12 @@ def deleteManagedDisk(vmName) {
 
 def getLatestBackupFile(storageAccount, containerName, storageKey) {
     def listFilesCommand = """
-    az storage blob list --account-name ${storageAccount} --container-name backupdb --account-key ${storageKey} --query "[].{name:name, lastModified:lastModified}" --output tsv
+    az storage blob list --account-name ${storageAccount} --container-name ${containerName} --account-key ${storageKey} --query "[].{name:name, lastModified:lastModified}" --output tsv
     """
     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
     def files = filesList.split('\n').collect { line ->
         def parts = line.split('\t')
-        [name: parts[0], lastModified: parts[1]]
+        [name: parts[0], lastModified: Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS'Z'", parts[1])]
     }
     def latestFile = files.max { it.lastModified }.name
     return latestFile
@@ -174,7 +174,7 @@ def getLatestBackupFile(storageAccount, containerName, storageKey) {
 
 def deleteOldBackups(storageAccount, containerName, storageKey, latestFile) {
     def listFilesCommand = """
-    az storage blob list --account-name ${storageAccount} --container-name backupdb--account-key ${storageKey} --query "[].{name:name, lastModified:lastModified}" --output tsv
+    az storage blob list --account-name ${storageAccount} --container-name backupdb --account-key ${storageKey} --query "[].{name:name, lastModified:lastModified}" --output tsv
     """
     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
     def files = filesList.split('\n').collect { it.split('\t') }
