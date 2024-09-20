@@ -177,7 +177,7 @@ def deleteOldBackups(storageAccount, containerName, storageKey, latestFile) {
     def files = filesList.split('\n').collect { it.split('\t') }
     files.each { file ->
         if (file[0] != latestFile) {
-            sh "az storage blob delete --account-name ${storageAccount} --container-name backup --account-key ${storageKey} --name ${file[0]}"
+            sh "az storage blob delete --account-name ${storageAccount} --container-name backupdb --account-key ${storageKey} --name ${file[0]}"
             echo "Deleted old backup file: ${file[0]}"
         }
     }
