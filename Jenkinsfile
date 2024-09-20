@@ -47,7 +47,7 @@ pipeline {
                             def backupFileName = "backup-sql1-${date}.bacpac"
                             def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/${backupFileName}"
                             sh """
-                            az sql db export --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --authentication-type Sql --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}
+                            az sql db export --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}
                             """
                         } else if (params.TARGET == 'sql2') {
                             // Backup for Azure SQL2
@@ -55,7 +55,7 @@ pipeline {
                             def backupFileName = "backup-sql2-${date}.bacpac"
                             def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/${backupFileName}"
                             sh """
-                            az sql db export --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --authentication-type Sql --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}
+                            az sql db export --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}
                             """
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
@@ -154,7 +154,7 @@ def deleteManagedDisk(vmName) {
             sh "az disk delete --name ${diskName} --resource-group rg_occidente_temp --yes"
             echo "Deleted managed disk: ${diskName}"
         } else {
-            echo "Disk ${diskName} is still attached to a VM."
+            echo "Disk ${diskName} is attached to a VM."
         }
     }
 }
