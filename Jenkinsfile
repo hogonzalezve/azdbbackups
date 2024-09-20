@@ -1,8 +1,10 @@
+// az backup job show --ids /subscriptions/0bea0a37-89cb-43fb-976f-0d8a3d8b1e4b/resourceGroups/rg_occidente_temp/providers/Microsoft.RecoveryServices/vaults/vaultoccirpa/backupJobs/d924f8d7-366a-4869-9f61-1721f1f2fd02
+
 pipeline {
     agent any
 
     options {
-        timeout(time: 30, unit: 'MINUTES')
+        timeout(time: 60, unit: 'MINUTES')
     }
 
     parameters {
@@ -41,10 +43,20 @@ pipeline {
                             jobId = parseJobId(backupOutput)
                         } else if (params.TARGET == 'sql1') {
                             // Backup for Azure SQL1
-                            sh "az sql db export --admin-password ${params.SQL1_ADMIN_PASSWORD} --admin-user ${params.SQL1_ADMIN_USER} --authentication-type Sql --name ${params.SQL1_DB_NAME} --resource-group ${params.SQL1_RESOURCE_GROUP} --server ${params.SQL1_SERVER_NAME} --storage-key ${params.SQL1_STORAGE_KEY} --storage-key-type ${params.SQL1_STORAGE_KEY_TYPE} --storage-uri ${params.SQL1_STORAGE_URI}"
+                            def date = sh(script: "date +%Y%m%d-%H%M%S", returnStdout: true).trim()
+                            def backupFileName = "backup-sql1-${date}.bacpac"
+                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/${backupFileName}"
+                            sh """
+                            az sql db export --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --authentication-type Sql --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}
+                            """
                         } else if (params.TARGET == 'sql2') {
                             // Backup for Azure SQL2
-                            sh "az sql db export --admin-password ${params.SQL2_ADMIN_PASSWORD} --admin-user ${params.SQL2_ADMIN_USER} --authentication-type Sql --name ${params.SQL2_DB_NAME} --resource-group ${params.SQL2_RESOURCE_GROUP} --server ${params.SQL2_SERVER_NAME} --storage-key ${params.SQL2_STORAGE_KEY} --storage-key-type ${params.SQL2_STORAGE_KEY_TYPE} --storage-uri ${params.SQL2_STORAGE_URI}"
+                            def date = sh(script: "date +%Y%m%d-%H%M%S", returnStdout: true).trim()
+                            def backupFileName = "backup-sql2-${date}.bacpac"
+                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/${backupFileName}"
+                            sh """
+                            az sql db export --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --authentication-type Sql --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}
+                            """
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
                         }
@@ -86,11 +98,11 @@ pipeline {
                             }
                         } else if (params.TARGET == 'sql1') {
                             // Restore for Azure SQL1
-                            def restoreOutput = sh(script: "az sql db import --admin-password ${params.SQL1_ADMIN_PASSWORD} --admin-user ${params.SQL1_ADMIN_USER} --authentication-type Sql --name ${params.SQL1_DB_NAME} --resource-group ${params.SQL1_RESOURCE_GROUP} --server ${params.SQL1_SERVER_NAME} --storage-key ${params.SQL1_STORAGE_KEY} --storage-key-type ${params.SQL1_STORAGE_KEY_TYPE} --storage-uri ${params.SQL1_STORAGE_URI}", returnStdout: true).trim()
+                            def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --authentication-type Sql --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri https://rgoccidentetemp92cd.blob.core.windows.net/miArchivo.bacpac", returnStdout: true).trim()
                             jobId = parseJobId(restoreOutput)
                         } else if (params.TARGET == 'sql2') {
                             // Restore for Azure SQL2
-                            def restoreOutput = sh(script: "az sql db import --admin-password ${params.SQL2_ADMIN_PASSWORD} --admin-user ${params.SQL2_ADMIN_USER} --authentication-type Sql --name ${params.SQL2_DB_NAME} --resource-group ${params.SQL2_RESOURCE_GROUP} --server ${params.SQL2_SERVER_NAME} --storage-key ${params.SQL2_STORAGE_KEY} --storage-key-type ${params.SQL2_STORAGE_KEY_TYPE} --storage-uri ${params.SQL2_STORAGE_URI}", returnStdout: true).trim()
+                            def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --authentication-type Sql --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri https://rgoccidentetemp92cd.blob.core.windows.net/miArchivo.bacpac", returnStdout: true).trim()
                             jobId = parseJobId(restoreOutput)
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
@@ -98,8 +110,6 @@ pipeline {
 
                         if (jobId) {
                             waitForJobCompletion(jobId)
-                            // Espera adicional para asegurar que los discos estén desasociados
-                            sleep(time: 60, unit: 'SECONDS')
                             if (params.TARGET == 'vm1' || params.TARGET == 'vm2') {
                                 deleteManagedDisk(params.TARGET)
                             }
