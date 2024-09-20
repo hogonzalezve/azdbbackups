@@ -165,7 +165,7 @@ def getLatestBackupFile(storageAccount, containerName, storageKey) {
     """
     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
     def files = filesList.split('\n').collect { it.split('\t') }
-    def latestFile = files.max { a, b -> a[1] <=> b[1] }[0]
+    def latestFile = files.sort { a, b -> b[1] <=> a[1] }[0][0]
     return latestFile
 }
 
