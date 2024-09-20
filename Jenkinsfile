@@ -161,14 +161,24 @@ def deleteManagedDisk(vmName) {
 
 def getLatestBackupFile(storageAccount, containerName, storageKey) {
     def listFilesCommand = """
-    az storage blob list --account-name ${storageAccount} --container-name backupdb --account-key ${storageKey} --query "[].{name:name, lastModified:lastModified}" --output tsv
+    az storage blob list --account-name ${storageAccount} --container-name ${containerName} --account-key backup --query "[].{name:name, lastModified:lastModified}" --output tsv
     """
     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
     def files = filesList.split('\n').collect { it.split('\t') }
 
-    def latestFile = files.max { a, b -> a[1] <=> b[1] }
+    def latestFile = null
+    def latestDate = null
 
-    return latestFile ? latestFile[0] : null
+    files.each { file ->
+        def fileName = file[0]
+        def fileDate = file[1]
+        if (latestDate == null || fileDate > latestDate) {
+            latestDate = fileDate
+            latestFile = fileName
+        }
+    }
+
+    return latestFile
 }
 
 def deleteOldBackups(storageAccount, containerName, storageKey, latestFile) {
