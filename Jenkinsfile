@@ -164,8 +164,11 @@ def getLatestBackupFile(storageAccount, containerName, storageKey) {
     az storage blob list --account-name ${storageAccount} --container-name backupdb --account-key ${storageKey} --query "[].{name:name, lastModified:lastModified}" --output tsv
     """
     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
-    def files = filesList.split('\n').collect { it.split('\t') }
-    def latestFile = files.sort { a, b -> b[1] <=> a[1] }[0][0]
+    def files = filesList.split('\n').collect { line ->
+        def parts = line.split('\t')
+        [name: parts[0], lastModified: parts[1]]
+    }
+    def latestFile = files.max { it.lastModified }.name
     return latestFile
 }
 
