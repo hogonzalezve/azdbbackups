@@ -168,7 +168,7 @@ def getLatestBackupFile(storageAccount, containerName, storageKey) {
 
     def latestFile = files.max { a, b -> a[1] <=> b[1] }
 
-    return latestFile[0]
+    return latestFile ? latestFile[0] : null
 }
 
 def deleteOldBackups(storageAccount, containerName, storageKey, latestFile) {
