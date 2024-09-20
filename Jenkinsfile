@@ -45,7 +45,7 @@ pipeline {
                             // Backup for Azure SQL1
                             def date = sh(script: "date +%Y%m%d-%H%M%S", returnStdout: true).trim()
                             def backupFileName = "backup-sql1-${date}.bacpac"
-                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/${backupFileName}"
+                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${backupFileName}"
                             sh """
                             az sql db export --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}
                             """
@@ -53,7 +53,7 @@ pipeline {
                             // Backup for Azure SQL2
                             def date = sh(script: "date +%Y%m%d-%H%M%S", returnStdout: true).trim()
                             def backupFileName = "backup-sql2-${date}.bacpac"
-                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/${backupFileName}"
+                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${backupFileName}"
                             sh """
                             az sql db export --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}
                             """
@@ -99,14 +99,14 @@ pipeline {
                         } else if (params.TARGET == 'sql1') {
                             // Restore for Azure SQL1
                             def latestFile = getLatestBackupFile('rgoccidentetemp92cd', 'container-name', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==')
-                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/${latestFile}"
+                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${latestFile}"
                             def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
                             jobId = parseJobId(restoreOutput)
                             deleteOldBackups('rgoccidentetemp92cd', 'container-name', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', latestFile)
                         } else if (params.TARGET == 'sql2') {
                             // Restore for Azure SQL2
                             def latestFile = getLatestBackupFile('rgoccidentetemp92cd', 'container-name', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==')
-                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/${latestFile}"
+                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${latestFile}"
                             def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
                             jobId = parseJobId(restoreOutput)
                             deleteOldBackups('rgoccidentetemp92cd', 'container-name', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', latestFile)
