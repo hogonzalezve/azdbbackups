@@ -132,7 +132,7 @@ def deleteManagedDisk(vmName) {
         def diskInfo = disk.split('\t')
         def diskName = diskInfo[0]
         def managedBy = diskInfo[1]
-        if (!managedBy) {
+        if (!managedBy || managedBy == 'none') {
             sh "az disk delete --name ${diskName} --resource-group rg_occidente_temp --yes"
             echo "Deleted managed disk: ${diskName}"
         } else {
