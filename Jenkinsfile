@@ -181,3 +181,11 @@ def getBacpacFile(storageAccount, containerName, storageKey) {
     echo "Bacpac file selected: ${bacpacFile}"
     return bacpacFile
 }
+
+def deleteOldBackups(storageAccount, containerName, storageKey, fileName) {
+    def deleteFileCommand = """
+    az storage blob delete --account-name ${storageAccount} --container-name ${containerName} --name ${fileName} --account-key ${storageKey}
+    """
+    sh(script: deleteFileCommand, returnStdout: true)
+    echo "Backup file ${fileName} deleted successfully."
+}
