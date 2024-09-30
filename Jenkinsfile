@@ -17,7 +17,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    az login --service-principal -u 9e8b8c0e-0f92-4325-b421-2028bf37b447 -p 8ep8Q~CE1cbNQf~N3ZA3CbqAO9wxvMgj4AkUxc5c -t 9dbc76ea-fb25-4b07-8f07-5dc315999b76
+                    az login --service-principal -u 9e8b8c0e-0f92-4325-b421-2028bf37b447 -p '-Pm8Q~9VOXivnqAilCKAzmlkUXGD97~6Udx-fcU~' -t 9dbc76ea-fb25-4b07-8f07-5dc315999b76
                     az account set -s 0bea0a37-89cb-43fb-976f-0d8a3d8b1e4b
                     '''
                 }
@@ -109,7 +109,7 @@ pipeline {
                             def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${latestFile}"
                             def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
                             jobId = parseJobId(restoreOutput)
-                            deleteOldBackups('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', latestFile)
+                            // deleteOldBackups('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', latestFile)
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
                         }
@@ -181,16 +181,16 @@ def getLatestBackupFile(storageAccount, containerName, storageKey) {
     return latestFile
 }
 
-def deleteOldBackups(storageAccount, containerName, storageKey, latestFile) {
-    def listFilesCommand = """
-    az storage blob list --account-name ${storageAccount} --container-name ${container-name} --account-key ${storageKey} --query "[].{name:name, lastModified:lastModified}" --output tsv
-    """
-    def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
-    def files = filesList.split('\n').collect { it.split('\t') }
-    files.each { file ->
-        if (file[0] != latestFile) {
-            sh "az storage blob delete --account-name ${storageAccount} --container-name ${container-name} --account-key ${storageKey} --name ${file[0]}"
-            echo "Deleted old backup file: ${file[0]}"
-        }
-    }
-}
+// def deleteOldBackups(storageAccount, containerName, storageKey, latestFile) {
+//     def listFilesCommand = """
+//     az storage blob list --account-name ${storageAccount} --container-name ${container-name} --account-key ${storageKey} --query "[].{name:name, lastModified:lastModified}" --output tsv
+//     """
+//     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
+//     def files = filesList.split('\n').collect { it.split('\t') }
+//     files.each { file ->
+//         if (file[0] != latestFile) {
+//             sh "az storage blob delete --account-name ${storageAccount} --container-name ${container-name} --account-key ${storageKey} --name ${file[0]}"
+//             echo "Deleted old backup file: ${file[0]}"
+//         }
+//     }
+// }
