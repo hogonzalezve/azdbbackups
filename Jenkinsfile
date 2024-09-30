@@ -164,6 +164,7 @@ def getLatestBackupFile(storageAccount, containerName, storageKey) {
     az storage blob list --account-name ${storageAccount} --container-name ${containerName} --account-key ${storageKey} --query "[].{name:name, lastModified:lastModified}" --output tsv
     """
     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
+    echo "Files list: ${filesList}"
     def files = filesList.split('\n').collect { it.split('\t') }
 
     def latestFile = null
@@ -172,11 +173,14 @@ def getLatestBackupFile(storageAccount, containerName, storageKey) {
     files.each { file ->
         def fileName = file[0]
         def fileDate = file[1]
+        echo "Checking file: ${fileName} with date: ${fileDate}"
         if (latestDate == null || fileDate > latestDate) {
             latestDate = fileDate
             latestFile = fileName
+            echo "New latest file: ${latestFile} with date: ${latestDate}"
         }
     }
 
+    echo "Latest file selected: ${latestFile}"
     return latestFile
 }
