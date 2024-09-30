@@ -98,7 +98,7 @@ pipeline {
                             }
                         } else if (params.TARGET == 'sql1') {
                             // Restore for Azure SQL1
-                            while (true) {
+                            if (bacpacFile) {
                                 def bacpacFile = getBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==')
                                 def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${bacpacFile}"
                                 echo "Using storage URI: ${storageUri}"
