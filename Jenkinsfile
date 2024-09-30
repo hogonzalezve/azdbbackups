@@ -171,6 +171,10 @@ def getLatestBackupFile(storageAccount, containerName, storageKey) {
     def latestDate = null
 
     files.each { file ->
+        if (file.size() < 2) {
+            echo "Skipping invalid entry: ${file}"
+            return
+        }
         def fileName = file[0]
         def fileDate = file[1]
         echo "Checking file: ${fileName} with date: ${fileDate}"
