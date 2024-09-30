@@ -98,18 +98,19 @@ pipeline {
                             }
                         } else if (params.TARGET == 'sql1') {
                             // Restore for Azure SQL1
-                            def latestFile = getLatestBackupFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==')
-                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${latestFile}"
+                            def bacpacFile = getBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==')
+                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${bacpacFile}"
+                            echo "Using storage URI: ${storageUri}"
                             def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
                             jobId = parseJobId(restoreOutput)
-                            deleteOldBackups('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', latestFile)
+                            deleteOldBackups('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', bacpacFile)
                         } else if (params.TARGET == 'sql2') {
                             // Restore for Azure SQL2
                             def latestFile = getLatestBackupFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==')
                             def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${latestFile}"
                             def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
                             jobId = parseJobId(restoreOutput)
-                            // deleteOldBackups('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', latestFile)
+                            deleteOldBackups('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', latestFile)
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
                         }
@@ -159,7 +160,7 @@ def deleteManagedDisk(vmName) {
     }
 }
 
-def getLatestBackupFile(storageAccount, containerName, storageKey) {
+def getBacpacFile(storageAccount, containerName, storageKey) {
     def listFilesCommand = """
     az storage blob list --account-name ${storageAccount} --container-name ${containerName} --account-key ${storageKey} --output tsv
     """
@@ -167,23 +168,22 @@ def getLatestBackupFile(storageAccount, containerName, storageKey) {
     echo "Files list: ${filesList}"
     def files = filesList.split('\n')
 
-    def latestFile = null
-    def latestDate = null
+    def bacpacFile = null
 
     files.each { file ->
         def fileInfo = file.split('\t')
-        def fileName = fileInfo[10] // Ajustar el índice según la posición del nombre del archivo en la salida
-        def fileDate = fileInfo[1] // Ajustar el índice según la posición de la fecha en la salida
-        if (fileName && fileName.endsWith('.bacpac')) {
-            echo "Checking file: ${fileName} with date: ${fileDate}"
-            if (latestDate == null || fileDate > latestDate) {
-                latestDate = fileDate
-                latestFile = fileName
-                echo "New latest file: ${latestFile} with date: ${latestDate}"
+        if (fileInfo.size() > 10) {
+            def fileName = fileInfo[10] // Ajustar el índice según la posición del nombre del archivo en la salida
+            if (fileName && fileName.endsWith('.bacpac')) {
+                bacpacFile = fileName
+                echo "Found bacpac file: ${bacpacFile}"
+                return bacpacFile
             }
+        } else {
+            echo "Skipping invalid entry: ${file}"
         }
     }
 
-    echo "Latest file selected: ${latestFile}"
-    return latestFile
+    echo "Bacpac file selected: ${bacpacFile}"
+    return bacpacFile
 }
