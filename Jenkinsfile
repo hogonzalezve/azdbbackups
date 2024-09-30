@@ -162,7 +162,7 @@ def deleteManagedDisk(vmName) {
 
 def getBacpacFile(storageAccount, containerName, storageKey) {
     def listFilesCommand = """
-    az storage blob list --account-name ${storageAccount} --container-name ${containerName} --account-key ${storageKey} --output tsv
+    az storage blob list --account-name ${storageAccount} --container-name ${containerName} --account-key ${storageKey} --output tsv --query "[].{name:name}"
     """
     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
     echo "Files list: ${filesList}"
@@ -171,16 +171,10 @@ def getBacpacFile(storageAccount, containerName, storageKey) {
     def bacpacFile = null
 
     files.each { file ->
-        def fileInfo = file.split('\t')
-        if (fileInfo.size() > 10) {
-            def fileName = fileInfo[10] // Ajustar el índice según la posición del nombre del archivo en la salida
-            if (fileName && fileName.endsWith('.bacpac')) {
-                bacpacFile = fileName
-                echo "Found bacpac file: ${bacpacFile}"
-                return bacpacFile
-            }
-        } else {
-            echo "Skipping invalid entry: ${file}"
+        if (file.endsWith('.bacpac')) {
+            bacpacFile = file
+            echo "Found bacpac file: ${bacpacFile}"
+            return bacpacFile
         }
     }
 
