@@ -161,7 +161,7 @@ def deleteManagedDisk(vmName) {
 
 def getLatestBackupFile(storageAccount, containerName, storageKey) {
     def listFilesCommand = """
-    az storage blob list --account-name ${storageAccount} --container-name ${containerName} --account-key ${storageKey} --query "[].{name:name, properties:properties.lastModified}" --output tsv
+    az storage blob list --account-name ${storageAccount} --container-name ${containerName} --account-key ${storageKey} --query "[].{name:name, lastModified:properties.lastModified}" --output tsv
     """
     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
     echo "Files list: ${filesList}"
@@ -171,7 +171,7 @@ def getLatestBackupFile(storageAccount, containerName, storageKey) {
     def latestDate = null
 
     files.each { file ->
-        if (file.size() < 2) {
+        if (file.size() < 2 || file[1] == 'None') {
             echo "Skipping invalid entry: ${file}"
             return
         }
