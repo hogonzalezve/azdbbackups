@@ -161,27 +161,26 @@ def deleteManagedDisk(vmName) {
 
 def getLatestBackupFile(storageAccount, containerName, storageKey) {
     def listFilesCommand = """
-    az storage blob list --account-name ${storageAccount} --container-name ${containerName} --account-key ${storageKey} --query "[].{name:name, lastModified:properties.lastModified}" --output tsv
+    az storage blob list --account-name ${storageAccount} --container-name ${containerName} --account-key ${storageKey} --output tsv
     """
     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
     echo "Files list: ${filesList}"
-    def files = filesList.split('\n').collect { it.split('\t') }
+    def files = filesList.split('\n')
 
     def latestFile = null
     def latestDate = null
 
     files.each { file ->
-        if (file.size() < 2 || file[1] == 'None') {
-            echo "Skipping invalid entry: ${file}"
-            return
-        }
-        def fileName = file[0]
-        def fileDate = file[1]
-        echo "Checking file: ${fileName} with date: ${fileDate}"
-        if (latestDate == null || fileDate > latestDate) {
-            latestDate = fileDate
-            latestFile = fileName
-            echo "New latest file: ${latestFile} with date: ${latestDate}"
+        def fileInfo = file.split('\t')
+        def fileName = fileInfo[10] // Ajustar el índice según la posición del nombre del archivo en la salida
+        def fileDate = fileInfo[1] // Ajustar el índice según la posición de la fecha en la salida
+        if (fileName && fileName.endsWith('.bacpac')) {
+            echo "Checking file: ${fileName} with date: ${fileDate}"
+            if (latestDate == null || fileDate > latestDate) {
+                latestDate = fileDate
+                latestFile = fileName
+                echo "New latest file: ${latestFile} with date: ${latestDate}"
+            }
         }
     }
 
