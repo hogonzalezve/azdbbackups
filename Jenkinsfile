@@ -98,7 +98,7 @@ pipeline {
                             }
                         } else if (params.TARGET == 'sql1') {
                             // Restore for Azure SQL1
-                            if (bacpacFile) {
+                            while (true) {
                                 def bacpacFile = getBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==')
                                 def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${bacpacFile}"
                                 echo "Using storage URI: ${storageUri}"
@@ -114,8 +114,10 @@ pipeline {
                             def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${bacpacFile}"
                             echo "Using storage URI: ${storageUri}"
                             def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
-                            jobId = parseJobId(restoreOutput)
-                            deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', bacpacFile)
+                            if (restoreOutput) {
+                                jobId = parseJobId(restoreOutput)
+                                deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', bacpacFile)
+                            }
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
                         }
