@@ -161,7 +161,7 @@ def deleteManagedDisk(vmName) {
 
 def getLatestBackupFile(storageAccount, containerName, storageKey) {
     def listFilesCommand = """
-    az storage blob list --account-name ${storageAccount} --container-name ${containerName} --account-key ${storageKey} --query "[].{name:name, lastModified:lastModified}" --output tsv
+    az storage blob list --account-name ${storageAccount} --container-name ${containerName} --account-key ${storageKey} --query "[].{name:name, properties:properties.lastModified}" --output tsv
     """
     def filesList = sh(script: listFilesCommand, returnStdout: true).trim()
     echo "Files list: ${filesList}"
