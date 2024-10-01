@@ -1,5 +1,3 @@
-// az backup job show --ids /subscriptions/0bea0a37-89cb-43fb-976f-0d8a3d8b1e4b/resourceGroups/rg_occidente_temp/providers/Microsoft.RecoveryServices/vaults/vaultoccirpa/backupJobs/d924f8d7-366a-4869-9f61-1721f1f2fd02
-
 pipeline {
     agent any
 
@@ -98,15 +96,16 @@ pipeline {
                             }
                         } else if (params.TARGET == 'sql1') {
                             // Restore for Azure SQL1
-                            while (true) {
-                                def bacpacFile = getBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==')
-                                def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${bacpacFile}"
-                                echo "Using storage URI: ${storageUri}"
-                                def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
-                                if (restoreOutput) {
-                                    jobId = parseJobId(restoreOutput)
-                                    deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', bacpacFile)
-                                }
+                            def bacpacFile = getBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==')
+                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${bacpacFile}"
+                            echo "Using storage URI: ${storageUri}"
+                            def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
+                                
+                            if (restoreOutput) {
+                                echo "Import completed successfully."
+
+                               // Delete the bacpac file after the import is complete
+                                deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', bacpacFile)
                             }
                         } else if (params.TARGET == 'sql2') {
                             // Restore for Azure SQL2
@@ -120,21 +119,7 @@ pipeline {
 
                                // Delete the bacpac file after the import is complete
                                 deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', bacpacFile)
-                                
-                                // List all files in the container
-                                //def listFilesOutput = sh(script: "az storage blob list --container-name backupdb --account-name rgoccidentetemp92cd --account-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --query [].name -o tsv", returnStdout: true).trim()
-                                //def files = listFilesOutput.split('\n')
-
-                                // Check if the files list is empty
-                                //if (files.isEmpty()) {
-                                //    echo "All files have been deleted."
-                                //} else {                             
-                                    // Delete each file in the container
-                                //    files.each { file ->
-                                //        deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', file)
-                                //}
-                            //}
-                        }                  
+                            }                  
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
                         }
@@ -208,8 +193,14 @@ def getBacpacFile(storageAccount, containerName, storageKey) {
 
 def deleteBacpacFile(storageAccount, containerName, storageKey, fileName) {
     def deleteFileCommand = """
-    az storage blob delete --account-name ${storageAccount} --container-name ${containerName} --name ${fileName} --account-key ${storageKey}
+    az storage blob delete-batch --account-name ${storageAccount} --source ${containerName}  --pattern "*.bacpac" --account-key ${storageKey}
     """
-    sh(script: deleteFileCommand, returnStdout: true)
-    echo "Backup file ${fileName} deleted successfully."
 }
+
+// def deleteBacpacFile(storageAccount, containerName, storageKey, fileName) {
+//     def deleteFileCommand = """
+//     az storage blob delete --account-name ${storageAccount} --container-name ${containerName} --name ${fileName} --account-key ${storageKey}
+//     """
+//     sh(script: deleteFileCommand, returnStdout: true)
+//     echo "Backup file ${fileName} deleted successfully."
+// }
