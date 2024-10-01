@@ -114,13 +114,11 @@ pipeline {
                             def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${bacpacFile}"
                             echo "Using storage URI: ${storageUri}"
                             def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
+                            
                             if (restoreOutput) {
-                                jobId = parseJobId(restoreOutput)
-                                
-                                // Wait for the import process to complete
-                                waitForImportCompletion(jobId)
-                                
-                                // Delete the bacpac file after the import is complete
+                                echo "Import completed successfully."
+
+                               // Delete the bacpac file after the import is complete
                                 deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', bacpacFile)
                                 
                                 // List all files in the container
@@ -131,7 +129,7 @@ pipeline {
                                 files.each { file ->
                                     deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', file)
                                 }
-                            }
+                            }              
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
                         }
@@ -203,23 +201,10 @@ def getBacpacFile(storageAccount, containerName, storageKey) {
     return bacpacFile
 }
 
-def waitForImportCompletion(jobId) {
-    // Implement logic to wait for the import process to complete
-    // This could involve polling the status of the import job until it is complete
-    // Example:
-    while (true) {
-        def status = sh(script: "az sql db import-export status --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --admin-user CloudSA53cfab96 --admin-password 4p2nn2tl1**++ --id ${jobId}", returnStdout: true).trim()
-        if (status.contains("Completed")) {
-            break
-        }
-        sleep(60) // Wait for 60 seconds before checking again
-    }
-}
-
-def deleteBacpacFile(storageAccount, containerName, storageKey, fileName) {
-    def deleteFileCommand = """
-    az storage blob delete --account-name ${storageAccount} --container-name ${containerName} --name ${fileName} --account-key ${storageKey}
-    """
-    sh(script: deleteFileCommand, returnStdout: true)
-    echo "Backup file ${fileName} deleted successfully."
-}
+// def deleteBacpacFile(storageAccount, containerName, storageKey, fileName) {
+//     def deleteFileCommand = """
+//     az storage blob delete --account-name ${storageAccount} --container-name ${containerName} --name ${fileName} --account-key ${storageKey}
+//     """
+//     sh(script: deleteFileCommand, returnStdout: true)
+//     echo "Backup file ${fileName} deleted successfully."
+// }
