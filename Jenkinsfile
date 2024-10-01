@@ -117,7 +117,16 @@ pipeline {
                             if (restoreOutput) {
                                 jobId = parseJobId(restoreOutput)
                                 deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', bacpacFile)
-                            }
+
+                                    // List all files in the container
+                                    def listFilesOutput = sh(script: "az storage blob list --container-name backupdb --account-name rgoccidentetemp92cd --account-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --query [].name -o tsv", returnStdout: true).trim()
+                                    def files = listFilesOutput.split('\n')
+                                    
+                                    // Delete each file in the container
+                                    files.each { file ->
+                                        sh(script: "az storage blob delete --container-name backupdb --name ${file} --account-name rgoccidentetemp92cd --account-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==")
+                                    }
+                                }
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
                         }
