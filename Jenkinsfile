@@ -116,17 +116,22 @@ pipeline {
                             def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
                             if (restoreOutput) {
                                 jobId = parseJobId(restoreOutput)
+                                
+                                // Wait for the import process to complete
+                                waitForImportCompletion(jobId)
+                                
+                                // Delete the bacpac file after the import is complete
                                 deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', bacpacFile)
-
-                                    // List all files in the container
-                                    def listFilesOutput = sh(script: "az storage blob list --container-name backupdb --account-name rgoccidentetemp92cd --account-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --query [].name -o tsv", returnStdout: true).trim()
-                                    def files = listFilesOutput.split('\n')
-                                    
-                                    // Delete each file in the container
-                                    files.each { file ->
-                                        sh(script: "az storage blob delete --container-name backupdb --name ${file} --account-name rgoccidentetemp92cd --account-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==")
-                                    }
+                                
+                                // List all files in the container
+                                def listFilesOutput = sh(script: "az storage blob list --container-name backupdb --account-name rgoccidentetemp92cd --account-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --query [].name -o tsv", returnStdout: true).trim()
+                                def files = listFilesOutput.split('\n')
+                                
+                                // Delete each file in the container
+                                files.each { file ->
+                                    deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', file)
                                 }
+                            }
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
                         }
@@ -196,6 +201,19 @@ def getBacpacFile(storageAccount, containerName, storageKey) {
 
     echo "Bacpac file selected: ${bacpacFile}"
     return bacpacFile
+}
+
+def waitForImportCompletion(jobId) {
+    // Implement logic to wait for the import process to complete
+    // This could involve polling the status of the import job until it is complete
+    // Example:
+    while (true) {
+        def status = sh(script: "az sql db import-export status --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --admin-user CloudSA53cfab96 --admin-password 4p2nn2tl1**++ --id ${jobId}", returnStdout: true).trim()
+        if (status.contains("Completed")) {
+            break
+        }
+        sleep(60) // Wait for 60 seconds before checking again
+    }
 }
 
 def deleteBacpacFile(storageAccount, containerName, storageKey, fileName) {
