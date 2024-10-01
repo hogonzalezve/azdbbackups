@@ -122,18 +122,18 @@ pipeline {
                                 deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', bacpacFile)
                                 
                                 // List all files in the container
-                                def listFilesOutput = sh(script: "az storage blob list --container-name backupdb --account-name rgoccidentetemp92cd --account-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --query [].name -o tsv", returnStdout: true).trim()
-                                def files = listFilesOutput.split('\n')
+                                //def listFilesOutput = sh(script: "az storage blob list --container-name backupdb --account-name rgoccidentetemp92cd --account-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --query [].name -o tsv", returnStdout: true).trim()
+                                //def files = listFilesOutput.split('\n')
 
                                 // Check if the files list is empty
-                                if (files.isEmpty()) {
-                                    echo "All files have been deleted."
-                                } else {                             
+                                //if (files.isEmpty()) {
+                                //    echo "All files have been deleted."
+                                //} else {                             
                                     // Delete each file in the container
-                                    files.each { file ->
-                                        deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', file)
-                                }
-                            }
+                                //    files.each { file ->
+                                //        deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', file)
+                                //}
+                            //}
                         }                  
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
