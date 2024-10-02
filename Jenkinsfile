@@ -118,7 +118,7 @@ pipeline {
                                 echo "Import completed successfully."
 
                                // Delete the bacpac file after the import is complete
-                                deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', bacpacFile)
+                                deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==')
                             }                  
                         } else {
                             error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
@@ -191,7 +191,7 @@ def getBacpacFile(storageAccount, containerName, storageKey) {
     return bacpacFile
 }
 
-def deleteBacpacFile(storageAccount, containerName, storageKey, fileName) {
+def deleteBacpacFile(storageAccount, containerName, storageKey) {
     def deleteFileCommand = """
     az storage blob delete-batch --account-name ${storageAccount} --source ${containerName}  --pattern "*.bacpac" --account-key ${storageKey}
     """
