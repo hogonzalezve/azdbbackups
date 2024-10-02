@@ -195,6 +195,7 @@ def deleteBacpacFile(storageAccount, containerName, storageKey) {
     def deleteFileCommand = """
     az storage blob delete-batch --account-name ${storageAccount} --source ${containerName}  --pattern "*.bacpac" --account-key ${storageKey}
     """
+    sh(script: deleteFileCommand, returnStdout: true)
 }
 
 // def deleteBacpacFile(storageAccount, containerName, storageKey, fileName) {
