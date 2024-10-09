@@ -60,7 +60,7 @@ pipeline {
                             passwordVariable: 'AZURE_SQL_PASSWORD'
                         ),
                         string(
-                            credentialsId: CREDENTIAL_STORAGE_KEY,
+                            credentialsId: 'CREDENTIAL_STORAGE_KEY',
                             variable: 'AZURE_STORAGE_KEY'
                         )
                     ])
