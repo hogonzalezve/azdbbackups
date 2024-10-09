@@ -34,12 +34,13 @@ pipeline {
                 script {
                     withCredentials([
                         azureServicePrincipal(
-                            credentialsId: CREDENTIAL_SERVICE_PRINCIPAL,
+                            credentialsId: 'CREDENTIAL_SERVICE_PRINCIPAL',
                             clientIdVariable: 'AZURE_CLIENT_ID',
                             clientSecretVariable: 'AZURE_CLIENT_SECRET',
                             tenantIdVariable: 'AZURE_TENANT_ID'
                         )
-                    ]) {
+                    ]) 
+                    {
                         sh '''
                         az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET -t $AZURE_TENANT_ID
                         az account set -s ${params.DEPLOY_AZURE_SUBSCRIPTION_ID}
@@ -54,7 +55,7 @@ pipeline {
                 script {
                     withCredentials([
                         usernamePassword(
-                            credentialsId: CREDENTIAL_SQL_DATABASE,
+                            credentialsId: 'CREDENTIAL_SQL_DATABASE',
                             usernameVariable: 'AZURE_SQL_USER',
                             passwordVariable: 'AZURE_SQL_PASSWORD'
                         ),
@@ -62,7 +63,8 @@ pipeline {
                             credentialsId: CREDENTIAL_STORAGE_KEY,
                             variable: 'AZURE_STORAGE_KEY'
                         )
-                    ]) {
+                    ])
+                    {
                         if (params.ACTION == 'backup') {
                             def resourceGroup = 'rpa-rg-qa'
                             def recoveryVault = 'rpa-vm-recovery-vault-qa'
