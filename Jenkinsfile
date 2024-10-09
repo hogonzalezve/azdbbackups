@@ -38,7 +38,7 @@ pipeline {
     parameters {
         string(name: 'ACTION', defaultValue: '', description: 'Action to perform. Supported values (backup or restore)')
         string(name: 'TARGET', defaultValue: '', description: 'Target to perform action. Supported values (vm_rpavmsvcr001qa, fs_rpastfilesrepositoryqa, sql_rpa-sqldatabase-cr-qa, sql_rpa-sqldatabase-robots-qa)')
-        string(name: 'DEPLOY_AZURE_SUBSCRIPTION_ID', defaultValue: '6719034d-d6a3-4665-8b43-251bf66a9d91', description: 'Subscription ID associated with backup resources')
+        string(name: 'DEPLOY_AZURE_SUBSCRIPTION_ID', defaultValue: '0bea0a37-89cb-43fb-976f-0d8a3d8b1e4b', description: 'Subscription ID associated with backup resources')
     }
 
     stages {
