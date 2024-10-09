@@ -1,10 +1,23 @@
 #!/usr/bin/env groovy
 /* Only keep the 10 most recent builds. */
-
+/* Variables */
+def resourceGroup = 'rg_occidente_temp'
+def recoveryVault = 'vaultoccirpa'
+def iaasContainer = 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1'
+def storageContainer = 'StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd'
+def iaasItem = 'vm1'
+def storageItem = ' fileshareone'
+def containerCr = 'backupdb'
+def containerRb = 'backupdb'
+def nameStorage = 'rgoccidentetemp92cd'
+def dbCr = 'pruebaoccibackup'
+def dbRb = 'pruebaoccibackup'
+def srvCr = 'pruebamonitoreosql'
+def srvRb = 'pruebamonitoreosql'
+def jobId = null
 def projectProperties = [
     buildDiscarder(logRotator(numToKeepStr: '10')),
 ]
-
 properties(projectProperties)
 
 /* Librería manejo de variables */
@@ -66,20 +79,6 @@ pipeline {
                     ])
                     {
                         if (params.ACTION == 'backup') {
-                            def resourceGroup = 'rpa-rg-qa'
-                            def recoveryVault = 'rpa-vm-recovery-vault-qa'
-                            def iaasContainer = 'IaasVMContainer;iaasvmcontainerv2;rpa-rg-qa;rpavmsvcr001qa'
-                            def storageContainer = 'StorageContainer;storage;rpa-rg-qa;rpastfilesrepositoryqa'
-                            def iaasItem = 'rpavmsvcr001qa'
-                            def storageItem = 'bots-repository'
-                            def containerCr = 'backupscrqa'
-                            def containerRb = 'backupsrbqa'
-                            def nameStorage = 'rpastagingqa'
-                            def dbCr = 'rpa-sqldatabase-cr-qa'
-                            def dbRb = 'rpa-sqldatabase-robots-qa'
-                            def srvCr = 'rpa-sqlserver-cr-qa'
-                            def srvRb = 'rpa-sqlserver-robots360-qa'
-                            def jobId = null
                             if (params.TARGET == 'vm_rpavmsvcr001qa') {
                                 // Backup for rpavmsvcr001qa
                                 def backupOutput = sh(script: "az backup protection backup-now --resource-group '${resourceGroup}' --vault-name '${recoveryVault}' --container-name '${iaasContainer}' --item-name '${iaasItem}' --backup-management-type AzureIaasVM --workload-type VM", returnStdout: true).trim()
@@ -116,20 +115,6 @@ pipeline {
                                 waitForJobCompletion(jobId)
                             }
                         } else if (params.ACTION == 'restore') {
-                            def resourceGroup = 'rpa-rg-qa'
-                            def recoveryVault = 'rpa-vm-recovery-vault-qa'
-                            def iaasContainer = 'IaasVMContainer;iaasvmcontainerv2;rpa-rg-qa;rpavmsvcr001qa'
-                            def storageContainer = 'StorageContainer;storage;rpa-rg-qa;rpastfilesrepositoryqa'
-                            def iaasItem = 'rpavmsvcr001qa'
-                            def storageItem = 'bots-repository'
-                            def containerCr = 'backupscrqa'
-                            def containerRb = 'backupsrbqa'
-                            def nameStorage = 'rpastagingqa'
-                            def dbCr = 'rpa-sqldatabase-cr-qa'
-                            def dbRb = 'rpa-sqldatabase-robots-qa'
-                            def srvCr = 'rpa-sqlserver-cr-qa'
-                            def srvRb = 'rpa-sqlserver-robots360-qa'
-                            def jobId = null
                             if (params.TARGET == 'vm_rpavmsvcr001qa') {
                                 // Restore for rpavmsvcr001qa
                                 def vmRecoveryPointsVm1 = sh(script: "az backup recoverypoint list --resource-group '${resourceGroup}' --vault-name '${recoveryVault}' --container-name '${iaasContainer}' --item-name '${iaasItem}' --backup-management-type AzureIaasVM --workload-type VM", returnStdout: true).trim()
