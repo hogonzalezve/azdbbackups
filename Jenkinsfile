@@ -147,7 +147,7 @@ pipeline {
                                 }
                             } else if (params.TARGET == 'sql_rpa-sqldatabase-cr-qa') {
                                 // Restore for Azure rpa-sqldatabase-cr-qa
-                                def bacpacFile = getBacpacFile('${nameStorage}', '${containerCr}', '$AZURE_STORAGE_KEY')
+                                def bacpacFile = getBacpacFile("${nameStorage}", "${containerCr}", '$AZURE_STORAGE_KEY')
                                 def storageUri = "https://${nameStorage}.blob.core.windows.net/${containerCr}/${bacpacFile}"
                                 echo "Using storage URI: ${storageUri}"
                                 def restoreOutput = sh(script: "az sql db import --admin-user $AZURE_SQL_USER --admin-password $AZURE_SQL_PASSWORD --auth-type SQL --name '${dbCr}' --resource-group '${resourceGroup}' --server '${srvCr}' --storage-key $AZURE_STORAGE_KEY --storage-key-type StorageAccessKey --storage-uri '${storageUri}'", returnStdout: true).trim()
@@ -156,7 +156,7 @@ pipeline {
                                     echo "Import completed successfully."
 
                                     // Delete the bacpac file after the import is complete
-                                    deleteBacpacFile('${nameStorage}', '${containerCr}', '$AZURE_STORAGE_KEY')
+                                    deleteBacpacFile("${nameStorage}", "${containerCr}", '$AZURE_STORAGE_KEY')
                                 }
                             } else if (params.TARGET == 'sql_rpa-sqldatabase-robots-qa') {
                                 // Restore for Azure rpa-sqldatabase-robots-qa
@@ -169,7 +169,7 @@ pipeline {
                                     echo "Import completed successfully."
 
                                     // Delete the bacpac file after the import is complete
-                                    deleteBacpacFile('${nameStorage}', '${containerRb}', '$AZURE_STORAGE_KEY')
+                                    deleteBacpacFile("${nameStorage}", "${containerRb}", '$AZURE_STORAGE_KEY')
                                 }
                             } else {
                                 error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm_rpavmsvcr001qa', 'fs_rpastfilesrepositoryqa', 'sql_rpa-sqldatabase-cr-qa' or 'sql_rpa-sqldatabase-robots-qa'."
