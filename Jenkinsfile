@@ -1,132 +1,199 @@
+#!/usr/bin/env groovy
+/* Only keep the 10 most recent builds. */
+
+def projectProperties = [
+    buildDiscarder(logRotator(numToKeepStr: '10')),
+]
+
+properties(projectProperties)
+
+/* Librería manejo de variables */
+import groovy.transform.Field
+
+/* Creación Variables Globales */
+@Field def VARIABLE_NAME = ''
+
 pipeline {
-    agent any
+    agent {
+        label 'jenkins-slave-azcli'
+    }
 
     options {
-        timeout(time: 60, unit: 'MINUTES')
+        timeout(time: 120, unit: 'MINUTES')
     }
 
     parameters {
-        string(name: 'ACTION', defaultValue: 'backup', description: 'Action to perform: backup or restore')
-        string(name: 'TARGET', defaultValue: 'vm1', description: 'Target to perform action on: vm1, vm2, fileshare, sql1, or sql2')
+        string(name: 'ACTION', defaultValue: '', description: 'Action to perform. Supported values (backup or restore)')
+        string(name: 'TARGET', defaultValue: '', description: 'Target to perform action. Supported values (vm_rpavmsvcr001qa, fs_rpastfilesrepositoryqa, sql_rpa-sqldatabase-cr-qa, sql_rpa-sqldatabase-robots-qa)')
+        string(name: 'DEPLOY_AZURE_SUBSCRIPTION_ID', defaultValue: '6719034d-d6a3-4665-8b43-251bf66a9d91', description: 'Subscription ID associated with backup resources')
     }
 
     stages {
         stage('Login to Azure') {
             steps {
                 script {
-                    sh '''
-                    az login --service-principal -u 9e8b8c0e-0f92-4325-b421-2028bf37b447 -p 7f78Q~6BWc2fBZ9KTZY.kNi9LtonWAzIB~u2tdpV -t 9dbc76ea-fb25-4b07-8f07-5dc315999b76
-                    az account set -s 0bea0a37-89cb-43fb-976f-0d8a3d8b1e4b
-                    '''
+                    withCredentials([
+                        azureServicePrincipal(
+                            credentialsId: CREDENTIAL_SERVICE_PRINCIPAL,
+                            clientIdVariable: 'AZURE_CLIENT_ID',
+                            clientSecretVariable: 'AZURE_CLIENT_SECRET',
+                            tenantIdVariable: 'AZURE_TENANT_ID'
+                            )
+                        ])
+                    {
+                        sh '''
+                        az login --service-principal -u \$AZURE_CLIENT_ID -p \$AZURE_CLIENT_SECRET -t \$AZURE_TENANT_ID
+                        az account set -s ${params.DEPLOY_AZURE_SUBSCRIPTION_ID}
+                        '''
+                    }
                 }
             }
-        }
+        }    
 
         stage('Perform Action') {
             steps {
                 script {
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: CREDENTIAL_SQL_DATABASE,
+                            usernameVariable: 'AZURE_SQL_USER',
+                            passwordVariable: 'AZURE_SQL_PASSWORD'
+                        ),
+                        string(
+                            credentialsId: CREDENTIAL_STORAGE_KEY,
+                            variable: 'AZURE_STORAGE_KEY'
+                            )
+                        ])
+
+                    {      
                     if (params.ACTION == 'backup') {
+                        def resourceGroup = 'rg_occidente_temp'
+                        def recoveryVault = 'vaultoccirpa'
+                        def iaasContainer = 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1'
+                        def storageContainer = 'StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd'
+                        def iaasItem = 'vm1'
+                        def storageItem = 'fileshareone'
+                        def containerCr = 'backupdb'
+                        def containerRb = 'backupdb'
+                        def nameStorage = 'rgoccidentetemp92cd'
+                        def dbCr = 'pruebaoccibackup'
+                        def dbRb = 'pruebaoccibackup'
+                        def srvCr = 'pruebamonitoreosql'
+                        def srvRb = 'pruebamonitoreosql'    
                         def jobId = null
-                        if (params.TARGET == 'vm1') {
-                            // Backup for vm1
-                            def backupOutput = sh(script: "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1' --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM", returnStdout: true).trim()
+                        if (params.TARGET == 'vm_rpavmsvcr001qa') {
+                            // Backup for rpavmsvcr001qa
+                            def backupOutput = sh(script: "az backup protection backup-now --resource-group '${resourceGroup}' --vault-name '${recoveryVault}' --container-name '${iaasContainer}' --item-name '${iaasItem}' --backup-management-type AzureIaasVM --workload-type VM", returnStdout: true).trim()
                             jobId = parseJobId(backupOutput)
-                        } else if (params.TARGET == 'vm2') {
-                            // Backup for vm2
-                            def backupOutput = sh(script: "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2' --item-name vm2 --backup-management-type AzureIaasVM --workload-type VM", returnStdout: true).trim()
+                        } else if (params.TARGET == 'vm_example') {
+                            // Backup for example
+                            def backupOutput = sh(script: "az backup protection backup-now --resource-group '${resourceGroup}' --vault-name '${recoveryVault}' --container-name '${iaasContainer}' --item-name '${iaasItem}' --backup-management-type AzureIaasVM --workload-type VM", returnStdout: true).trim()
                             jobId = parseJobId(backupOutput)
-                        } else if (params.TARGET == 'fileshare') {
-                            // Backup for file share
-                            def backupOutput = sh(script: "az backup protection backup-now --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd' --item-name fileshareone --backup-management-type AzureStorage --workload-type AzureFileShare", returnStdout: true).trim()
+                        } else if (params.TARGET == 'fs_rpastfilesrepositoryqa') {
+                            // Backup for rpastfilesrepositoryqa
+                            def backupOutput = sh(script: "az backup protection backup-now --resource-group '${resourceGroup}' --vault-name '${recoveryVault}' --container-name '${storageContainer}' --item-name '${storageItem}' --backup-management-type AzureStorage --workload-type AzureFileShare", returnStdout: true).trim()
                             jobId = parseJobId(backupOutput)
-                        } else if (params.TARGET == 'sql1') {
-                            // Backup for Azure SQL1
+                        } else if (params.TARGET == 'sql_rpa-sqldatabase-cr-qa') {
+                            // Backup for Azure rpa-sqldatabase-cr-qa
                             def date = sh(script: "date +%Y%m%d-%H%M%S", returnStdout: true).trim()
-                            def backupFileName = "backup-sql1-${date}.bacpac"
-                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${backupFileName}"
+                            def backupFileName = "backup-${dbCr}-${date}.bacpac"
+                            def storageUri = "https://${nameStorage}.blob.core.windows.net//${containerCr}/${backupFileName}"
                             sh """
-                            az sql db export --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}
+                            az sql db export --admin-user \$AZURE_SQL_USER --admin-password \$AZURE_SQL_PASSWORD --auth-type SQL --name '${dbCr}' --resource-group '${resourceGroup}' --server '${srvCr}' --storage-key \$AZURE_STORAGE_KEY --storage-key-type StorageAccessKey --storage-uri '${storageUri}'
                             """
-                        } else if (params.TARGET == 'sql2') {
-                            // Backup for Azure SQL2
+                        } else if (params.TARGET == 'sql_rpa-sqldatabase-robots-qa') {
+                            // Backup for Azure rpa-sqldatabase-robots-qa
                             def date = sh(script: "date +%Y%m%d-%H%M%S", returnStdout: true).trim()
-                            def backupFileName = "backup-sql2-${date}.bacpac"
-                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${backupFileName}"
+                            def backupFileName = "backup-${dbRb}-${date}.bacpac"
+                            def storageUri = "https://'${nameStorage}'.blob.core.windows.net/${containerRb}/${backupFileName}"
                             sh """
-                            az sql db export --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}
+                            az sql db export --admin-user \$AZURE_SQL_USER --admin-password \$AZURE_SQL_PASSWORD --auth-type SQL --name '${dbRb}' --resource-group '${resourceGroup}' --server '${srvRb}' --storage-key \$AZURE_STORAGE_KEY --storage-key-type StorageAccessKey --storage-uri '${storageUri}'
                             """
                         } else {
-                            error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
+                            error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm_rpavmsvcr001qa', 'fs_rpastfilesrepositoryqa', 'sql_rpa-sqldatabase-cr-qa' or 'sql_rpa-sqldatabase-robots-qa'."
                         }
 
                         if (jobId) {
                             waitForJobCompletion(jobId)
                         }
                     } else if (params.ACTION == 'restore') {
+                        def resourceGroup = 'rg_occidente_temp'
+                        def recoveryVault = 'vaultoccirpa'
+                        def iaasContainer = 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1'
+                        def storageContainer = 'StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd'
+                        def iaasItem = 'vm1'
+                        def storageItem = 'fileshareone'
+                        def containerCr = 'backupdb'
+                        def containerRb = 'backupdb'
+                        def nameStorage = 'rgoccidentetemp92cd'
+                        def dbCr = 'pruebaoccibackup'
+                        def dbRb = 'pruebaoccibackup'
+                        def srvCr = 'pruebamonitoreosql'
+                        def srvRb = 'pruebamonitoreosql'    
                         def jobId = null
-                        if (params.TARGET == 'vm1') {
-                            // Restore for vm1
-                            def vmRecoveryPointsVm1 = sh(script: "az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1' --item-name vm1 --backup-management-type AzureIaasVM --workload-type VM", returnStdout: true).trim()
+                        if (params.TARGET == 'vm_rpavmsvcr001qa') {
+                            // Restore for rpavmsvcr001qa
+                            def vmRecoveryPointsVm1 = sh(script: "az backup recoverypoint list --resource-group '${resourceGroup}' --vault-name '${recoveryVault}' --container-name '${iaasContainer}' --item-name '${iaasItem}' --backup-management-type AzureIaasVM --workload-type VM", returnStdout: true).trim()
                             def vmRecoveryPointNameVm1 = parseRecoveryPointName(vmRecoveryPointsVm1)
                             if (vmRecoveryPointNameVm1) {
-                                def restoreOutput = sh(script: "az backup restore restore-disks --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm1' --item-name vm1 --rp-name ${vmRecoveryPointNameVm1} --storage-account rgoccidentetemp92cd --restore-mode OriginalLocation", returnStdout: true).trim()
+                                def restoreOutput = sh(script: "az backup restore restore-disks --resource-group '${resourceGroup}' --vault-name '${recoveryVault}' --container-name '${iaasContainer}' --item-name '${iaasItem}' --rp-name ${vmRecoveryPointNameVm1} --storage-account ${nameStorage} --restore-mode OriginalLocation", returnStdout: true).trim()
                                 jobId = parseJobId(restoreOutput)
                             } else {
-                                error "No recovery points found for vm1."
+                                error "No recovery points found for rpavmsvcr001qa."
                             }
-                        } else if (params.TARGET == 'vm2') {
-                            // Restore for vm2
-                            def vmRecoveryPointsVm2 = sh(script: 'az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2" --item-name vm2 --backup-management-type AzureIaasVM --workload-type VM', returnStdout: true).trim()
+                        } else if (params.TARGET == 'vm_example') {
+                            // Restore for example
+                            def vmRecoveryPointsVm2 = sh(script: "az backup recoverypoint list --resource-group '${resourceGroup}' --vault-name '${recoveryVault}' --container-name  '${iaasContainer}' --item-name '${iaasItem}' --backup-management-type AzureIaasVM --workload-type VM", returnStdout: true).trim()
                             def vmRecoveryPointNameVm2 = parseRecoveryPointName(vmRecoveryPointsVm2)
                             if (vmRecoveryPointNameVm2) {
-                                def restoreOutput = sh(script: "az backup restore restore-disks --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'IaasVMContainer;iaasvmcontainerv2;rg_occidente_temp;vm2' --item-name vm2 --rp-name ${vmRecoveryPointNameVm2} --storage-account rgoccidentetemp92cd --restore-mode OriginalLocation", returnStdout: true).trim()
+                                def restoreOutput = sh(script: "az backup restore restore-disks --resource-group '${resourceGroup}' --vault-name '${recoveryVault}' --container-name '${iaasContainer}' --item-name '${iaasItem}' --rp-name ${vmRecoveryPointNameVm2} --storage-account ${nameStorage} --restore-mode OriginalLocation", returnStdout: true).trim()
                                 jobId = parseJobId(restoreOutput)
                             } else {
-                                error "No recovery points found for vm2."
+                                error "No recovery points found for example."
                             }
-                        } else if (params.TARGET == 'fileshare') {
+                        } else if (params.TARGET == 'fs_rpastfilesrepositoryqa') {
                             // Restore for file share
-                            def fileShareRecoveryPoints = sh(script: 'az backup recoverypoint list --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name "StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd" --item-name fileshareone --backup-management-type AzureStorage --workload-type AzureFileShare', returnStdout: true).trim()
+                            def fileShareRecoveryPoints = sh(script: "az backup recoverypoint list --resource-group ${resourceGroup} --vault-name ${recoveryVault} --container-name '${storageContainer}' --item-name '${storageItem}' --backup-management-type AzureStorage --workload-type AzureFileShare", returnStdout: true).trim()
                             def fileShareRecoveryPointName = parseRecoveryPointName(fileShareRecoveryPoints)
                             if (fileShareRecoveryPointName) {
-                                def restoreOutput = sh(script: "az backup restore restore-azurefiles --resource-group rg_occidente_temp --vault-name vaultoccirpa --container-name 'StorageContainer;Storage;rg_occidente_temp;rgoccidentetemp92cd' --item-name fileshareone --rp-name ${fileShareRecoveryPointName} --resolve-conflict Overwrite --restore-mode OriginalLocation", returnStdout: true).trim()
+                                def restoreOutput = sh(script: "az backup restore restore-azurefiles --resource-group ${resourceGroup} --vault-name ${recoveryVault} --container-name '${storageContainer}' --item-name '${storageItem}' --rp-name ${fileShareRecoveryPointName} --resolve-conflict Overwrite --restore-mode OriginalLocation", returnStdout: true).trim()
                                 jobId = parseJobId(restoreOutput)
                             } else {
-                                error "No recovery points found for fileshare."
+                                error "No recovery points found for rpastfilesrepositoryqa."
                             }
-                        } else if (params.TARGET == 'sql1') {
-                            // Restore for Azure SQL1
-                            def bacpacFile = getBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==')
-                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${bacpacFile}"
+                        } else if (params.TARGET == 'sql_rpa-sqldatabase-cr-qa') {
+                            // Restore for Azure rpa-sqldatabase-cr-qa
+                            def bacpacFile = getBacpacFile('${nameStorage}', '${containerCr}', '\$AZURE_STORAGE_KEY')
+                            def storageUri = "https://${nameStorage}.blob.core.windows.net/${containerCr}/${bacpacFile}"
                             echo "Using storage URI: ${storageUri}"
-                            def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
+                            def restoreOutput = sh(script: "az sql db import --admin-user \$AZURE_SQL_USER --admin-password \$AZURE_SQL_PASSWORD --auth-type SQL --name ${dbCr} --resource-group ${resourceGroup} --server ${srvCr}--storage-key \$AZURE_STORAGE_KEY --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
                                 
                             if (restoreOutput) {
                                 echo "Import completed successfully."
 
                                // Delete the bacpac file after the import is complete
-                                deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==', bacpacFile)
+                                deleteBacpacFile('${nameStorage}', '${containerCr}', '\$AZURE_STORAGE_KEY')
                             }
-                        } else if (params.TARGET == 'sql2') {
-                            // Restore for Azure SQL2
-                            def bacpacFile = getBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==')
-                            def storageUri = "https://rgoccidentetemp92cd.blob.core.windows.net/backupdb/${bacpacFile}"
+                        } else if (params.TARGET == 'sql_rpa-sqldatabase-robots-qa') {
+                            // Restore for Azure rpa-sqldatabase-robots-qa
+                            def bacpacFile = getBacpacFile('${nameStorage}', '${containerRb}', '\$AZURE_STORAGE_KEY')
+                            def storageUri = "https://${nameStorage}.blob.core.windows.net/${containerRb}/${bacpacFile}"
                             echo "Using storage URI: ${storageUri}"
-                            def restoreOutput = sh(script: "az sql db import --admin-password 4p2nn2tl1**++ --admin-user CloudSA53cfab96 --auth-type SQL --name pruebaoccibackup --resource-group rg_occidente_temp --server pruebamonitoreosql --storage-key q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q== --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
+                            def restoreOutput = sh(script: "az sql db import --admin-user \$AZURE_SQL_USER --admin-password \$AZURE_SQL_PASSWORD --auth-type SQL --name ${dbRb} --resource-group ${resourceGroup} --server ${srvRb} --storage-key \$AZURE_STORAGE_KEY --storage-key-type StorageAccessKey --storage-uri ${storageUri}", returnStdout: true).trim()
                             
                             if (restoreOutput) {
                                 echo "Import completed successfully."
 
                                // Delete the bacpac file after the import is complete
-                                deleteBacpacFile('rgoccidentetemp92cd', 'backupdb', 'q0ZMTeXD+zzZm0zI8GGHyxA0zOCBHLNb2LtwqwqKqQ8X1Ru/0yF0mqkOefGOx1TGxyfqyFm9MvCL+ASt6VsJ3Q==')
+                                deleteBacpacFile('${nameStorage}', '${containerRb}', '\$AZURE_STORAGE_KEY')
                             }                  
                         } else {
-                            error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm1', 'vm2', 'fileshare', 'sql1', or 'sql2'."
+                            error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm_rpavmsvcr001qa', 'fs_rpastfilesrepositoryqa', 'sql_rpa-sqldatabase-cr-qa' or 'sql_rpa-sqldatabase-robots-qa'."
                         }
 
                         if (jobId) {
                             waitForJobCompletion(jobId)
-                            if (params.TARGET == 'vm1' || params.TARGET == 'vm2') {
+                            if (params.TARGET == 'vm_rpavmsvcr001qa' || params.TARGET == 'vm_example') {
                                 deleteManagedDisk(params.TARGET)
                             }
                         }
@@ -161,7 +228,7 @@ def deleteManagedDisk(vmName) {
         def diskName = diskInfo[0]
         def managedBy = diskInfo[1]
         if (managedBy == 'None') {
-            sh "az disk delete --name ${diskName} --resource-group rg_occidente_temp --yes"
+            sh "az disk delete --name ${diskName} --resource-group ${resourceGroup} --yes"
             echo "Deleted managed disk: ${diskName}"
         } else {
             echo "Disk ${diskName} is attached to a VM."
@@ -197,11 +264,3 @@ def deleteBacpacFile(storageAccount, containerName, storageKey) {
     """
     sh(script: deleteFileCommand, returnStdout: true)
 }
-
-// def deleteBacpacFile(storageAccount, containerName, storageKey, fileName) {
-//     def deleteFileCommand = """
-//     az storage blob delete --account-name ${storageAccount} --container-name ${containerName} --name ${fileName} --account-key ${storageKey}
-//     """
-//     sh(script: deleteFileCommand, returnStdout: true)
-//     echo "Backup file ${fileName} deleted successfully."
-// }
