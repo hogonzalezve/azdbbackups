@@ -1,4 +1,4 @@
-!/usr/bin/env groovy
+#!/usr/bin/env groovy
 /* Only keep the 10 most recent builds. */
 /* Variables */
 def resourceGroup = 'rg_occidente_temp'
