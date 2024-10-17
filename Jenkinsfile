@@ -97,7 +97,7 @@ pipeline {
                                 def backupFileName = "backup-${dbCr}-${date}.bacpac"
                                 def storageUri = "https://${nameStorage}.blob.core.windows.net//${containerCr}/${backupFileName}"
                                 sh """
-                                az sql db export --admin-user $AZURE_SQL_USER --admin-password $AZURE_SQL_PASSWORD --auth-type SQL --name '${dbCr}' --resource-group '${resourceGroup}' --server '${srvCr}' --storage-key $AZURE_STORAGE_KEY --storage-key-type StorageAccessKey --storage-uri '${storageUri}'
+                                az sql db export --admin-user '${AZURE_SQL_USER}' --admin-password '${AZURE_SQL_PASSWORD}' --auth-type SQL --name '${dbCr}' --resource-group '${resourceGroup}' --server '${srvCr}' --storage-key '${AZURE_STORAGE_KEY}' --storage-key-type StorageAccessKey --storage-uri '${storageUri}'
                                 """
                             } else if (params.TARGET == 'sql_rpa-sqldatabase-robots-qa') {
                                 // Backup for Azure rpa-sqldatabase-robots-qa
@@ -105,7 +105,7 @@ pipeline {
                                 def backupFileName = "backup-${dbRb}-${date}.bacpac"
                                 def storageUri = "https://${nameStorage}.blob.core.windows.net/${containerRb}/${backupFileName}"
                                 sh """
-                                az sql db export --admin-user $AZURE_SQL_USER --admin-password $AZURE_SQL_PASSWORD --auth-type SQL --name '${dbRb}' --resource-group '${resourceGroup}' --server '${srvRb}' --storage-key $AZURE_STORAGE_KEY --storage-key-type StorageAccessKey --storage-uri '${storageUri}'
+                                az sql db export --admin-user '${AZURE_SQL_USER}' --admin-password '${AZURE_SQL_PASSWORD}' --auth-type SQL --name '${dbRb}' --resource-group '${resourceGroup}' --server '${srvRb}' --storage-key '${AZURE_STORAGE_KEY}' --storage-key-type StorageAccessKey --storage-uri '${storageUri}'
                                 """
                             } else {
                                 error "Invalid TARGET parameter: ${params.TARGET}. Must be 'vm_rpavmsvcr001qa', 'fs_rpastfilesrepositoryqa', 'sql_rpa-sqldatabase-cr-qa' or 'sql_rpa-sqldatabase-robots-qa'."
