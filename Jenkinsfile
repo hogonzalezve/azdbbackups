@@ -1,4 +1,4 @@
-#!/usr/bin/env groovy
+!/usr/bin/env groovy
 /* Only keep the 10 most recent builds. */
 /* Variables */
 def resourceGroup = 'rg_occidente_temp'
@@ -55,8 +55,8 @@ pipeline {
                     ]) 
                     {
                         sh """
-                        az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET -t $AZURE_TENANT_ID
-                        az account set -s ${params.DEPLOY_AZURE_SUBSCRIPTION_ID}
+                        az login --service-principal -u '${AZURE_CLIENT_ID}' -p '${$AZURE_CLIENT_SECRET}' -t '${$AZURE_TENANT_ID}'
+                        az account set -s '${params.DEPLOY_AZURE_SUBSCRIPTION_ID}'
                         """
                     }
                 }
